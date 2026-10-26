@@ -234,15 +234,16 @@ const htmlPanels = (env, S, rows) =>
         : panelCongKhai(row, row.id === S.sel),
     )
     .join("");
+// Số kết quả + trang: 2 nút kính mờ ở góc phải dưới (đối xứng với nút loa ở góc trái), dùng chung cho khách và bếp
 const htmlKetQua = (env, S, meta, soHien, cho) => {
-  if (cho) return "Đang lọc…";
-  const dau = `${meta.total} ${env.r.singular}`;
+  const nut = (t) => `<span class="nut-kq">${esc(t)}</span>`;
+  if (cho) return nut("Đang lọc…");
+  const dau = nut(`${meta.total} ${env.r.singular}`);
   if (nhieuTrang(S))
-    return dau + (meta.total > soHien ? ` · đang hiển thị ${soHien}` : "");
-  return (
-    dau +
-    (meta.totalPages > 1 ? ` · trang ${meta.page}/${meta.totalPages}` : "")
-  );
+    return meta.total > soHien ? dau + nut(`đang hiển thị ${soHien}`) : dau;
+  return meta.totalPages > 1
+    ? dau + nut(`trang ${meta.page}/${meta.totalPages}`)
+    : dau;
 };
 
 // Chân danh sách (tùy chế độ): thanh phân trang | nút "Xem thêm" | vùng canh (sentinel) của cuộn vô hạn
@@ -362,7 +363,6 @@ export async function load(ctx, resKey, admin) {
         <form class="tim" data-tim>
           <input type="text" name="q" value="${esc(S.q)}" placeholder="${esc(placeholder)}" autocomplete="off" aria-label="Tìm theo tên">
         </form>
-        <p class="ket-qua" id="kq" aria-live="polite">${htmlKetQua(env, S, res.meta, res.data.length, false)}</p>
       </div>
       ${htmlLuoi(env, S, res.data, S.page, false)}
       ${htmlChan(env, S, res.meta, { lk, soHien: res.data.length })}
@@ -370,6 +370,7 @@ export async function load(ctx, resKey, admin) {
     <aside class="chi-tiet" aria-label="Chi tiết">${htmlPanels(env, S, res.data)}</aside>
   </div>
 </main>
+<div class="goc-kq" id="kq" aria-live="polite">${htmlKetQua(env, S, res.meta, res.data.length, false)}</div>
 ${benLoc(resKey, S, opts)}`,
     mount: (root, c) => mount(root, c, env, S, res),
   };
@@ -466,7 +467,7 @@ function mount(root, ctx, env, S, first) {
     aside.innerHTML = htmlPanels(env, S, hien);
     chia.classList.toggle("co-chon", moSel);
     cot.classList.toggle("dang-loc", cho);
-    kq.textContent = htmlKetQua(env, S, meta, hien.length, cho);
+    kq.innerHTML = htmlKetQua(env, S, meta, hien.length, cho);
     nutXoa.hidden = !coLoc(S);
     $('[data-vung="chan"]', cot).outerHTML = htmlChan(env, S, meta, {
       cho,
@@ -508,7 +509,7 @@ function mount(root, ctx, env, S, first) {
       )
         return navigate(location.pathname + location.search, { replace: true });
       cho = false;
-      kq.textContent = "Không tải được dữ liệu.";
+      kq.innerHTML = '<span class="nut-kq">Không tải được dữ liệu</span>';
       bao(e.message || "Có lỗi xảy ra, vui lòng thử lại.");
     }
   }
@@ -540,7 +541,7 @@ function mount(root, ctx, env, S, first) {
         htmlCacO(env, S, moi, meta.page, dau),
       );
       aside.insertAdjacentHTML("beforeend", htmlPanels(env, S, moi));
-      kq.textContent = htmlKetQua(env, S, meta, rows.length, false);
+      kq.innerHTML = htmlKetQua(env, S, meta, rows.length, false);
       ghiUrl(false);
     } catch (e) {
       if ((e && e.name === "AbortError") || my !== seq) return;
