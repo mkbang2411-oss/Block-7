@@ -325,8 +325,8 @@ export async function load(ctx, resKey, admin) {
   return {
     title: admin ? "Quản trị " + r.title : "Danh sách món ăn",
     am: admin ? "bep" : "quan",
-    html: `<div class="nen"></div><div class="mo"></div>
-<main class="man bep cuon">
+    html: `<div class="nen nen-kinh"></div><div class="mo"></div>
+<main class="man bep ds cuon">
   ${thanh}
   <div class="chia${S.sel ? " co-chon" : ""}" id="chia">
     <div class="cot-luoi">

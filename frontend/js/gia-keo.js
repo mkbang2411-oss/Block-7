@@ -6,12 +6,20 @@
 // - Đặt 2 núm ở 2 mốc bất kỳ thì ra các món có giá nằm giữa 2 mốc đó (gồm cả hai đầu mốc).
 // - Kéo mượt: núm đi theo ngón tay / chuột theo từng pixel, khi buông thì hút về mốc gần nhất. Kết quả lọc đổi ngay khi núm
 //   đi qua mốc mới (listing.js tự gom 300ms rồi mới hỏi server).
+// - Nhãn dưới thanh là dạng RÚT GỌN (100k · 200k · 500k · 1tr · 2tr · 5tr · 10tr+) vì thanh nằm trong sidebar hẹp, ghi đủ số thì 7 mốc dính vào nhau.
+//   Số đầy đủ vẫn hiện ở ô giá phía trên thanh và đọc được qua aria-valuetext / title; mốc đang được núm chỉ vào thì in đậm + đổi màu.
 // - Giá trị trả ra là SỐ ĐẦY ĐỦ ("100000", không phải "100"); "" = không giới hạn. Dùng được bằng bàn phím (← → Home End).
 import { MOC_GIA } from "./list-config.js";
+import { esc } from "./utils.js";
 
 const N = MOC_GIA.length; // 7 mốc -> vị trí 0 (đầu thanh) .. 7 (mốc cuối)
 const so = (n) => n.toLocaleString("vi-VN");
 const NHAN = MOC_GIA.map((g, i) => (i === N - 1 ? "Trên " + so(g) : so(g)));
+// 100000 -> "100k", 1000000 -> "1tr", 2500000 -> "2,5tr"; mốc cuối thêm "+" (trên mốc này = không giới hạn)
+const ngan = (g, i) =>
+  (g >= 1e6 ? String(g / 1e6).replace(".", ",") + "tr" : g / 1e3 + "k") +
+  (i === N - 1 ? "+" : "");
+const NHAN_NGAN = MOC_GIA.map(ngan);
 
 // vị trí núm (0..N) <-> giá trị lọc
 const viTriTu = (v) => {
@@ -51,7 +59,7 @@ export function htmlGia(min, max) {
     <button type="button" class="gk-num" data-gk-num="1" role="slider" aria-label="Giá đến" aria-orientation="horizontal" style="left:${x(b)}"></button>
   </div>
   <div class="gk-nhan" aria-hidden="true">
-    <span style="left:0%" class="gk-nhan-0">0</span>${NHAN.map((t, i) => `<span style="left:${x(i + 1)}"${i === N - 1 ? ' class="gk-nhan-cuoi"' : ""}>${i === N - 1 ? "Trên <br>" + so(MOC_GIA[i]) : t}</span>`).join("")}
+    ${NHAN_NGAN.map((t, i) => `<span data-gk-nhan="${i + 1}" style="left:${x(i + 1)}" title="${esc(NHAN[i])}đ">${t}</span>`).join("")}
   </div>
 </div>`;
 }
@@ -64,6 +72,7 @@ export function ganGia(root, signal, onChange) {
   const day = el.querySelector("[data-gk-day]");
   const chu = el.querySelector("[data-gk-chu]");
   const nums = [...el.querySelectorAll("[data-gk-num]")];
+  const nhan = [...el.querySelectorAll("[data-gk-nhan]")];
   const pos = [0, N]; // vị trí hiện tại (số thực lúc đang kéo, số nguyên khi đứng yên)
   let keo = -1; // chỉ số núm đang kéo (-1: không kéo)
   let gan = [0, N]; // vị trí đã chốt (làm tròn) gần nhất đã báo ra ngoài
@@ -98,6 +107,14 @@ export function ganGia(root, signal, onChange) {
     const a = giaTu(Math.round(pos[0]), true),
       b = giaTu(Math.round(pos[1]), false);
     chu.textContent = chuGia(a, b);
+    // nhãn mốc: đang được núm chỉ vào = đậm đỏ, nằm giữa hai núm = đậm vừa, còn lại mờ
+    const lo = Math.round(pos[0]),
+      hi = Math.round(pos[1]);
+    nhan.forEach((t, i) => {
+      const m = i + 1;
+      t.classList.toggle("nut-dang", m === lo || m === hi);
+      t.classList.toggle("trong", m > lo && m < hi);
+    });
   }
   function baoNeuDoi() {
     const r = [Math.round(pos[0]), Math.round(pos[1])];

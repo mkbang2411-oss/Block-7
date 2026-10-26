@@ -15,8 +15,8 @@ export async function load(ctx) {
   return {
     title: d.name,
     am: "quan",
-    html: `<div class="nen"></div><div class="mo"></div>
-<main class="man bep cuon">
+    html: `<div class="nen nen-kinh"></div><div class="mo"></div>
+<main class="man bep ds cuon">
   ${thanhTren({ themHref: ve, themLabel: "← Danh sách món", role })}
   <section class="hop hop-giua rong">
     <div class="ct-dau"><span class="bieu">${dishThumb(d, true, true)}</span><h2>${esc(d.name)}</h2></div>
