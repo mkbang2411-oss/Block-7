@@ -3672,12 +3672,24 @@ body.dang-tai {
 .bep.ds .ct-ds dd:last-child {
   border-bottom: 0;
 }
-/* màn cao: khung chi tiết đi theo khi cuộn danh sách dài */
-@media (min-height: 780px) and (min-width: 901px) {
-  .bep.ds .chi-tiet {
-    align-self: flex-start;
-    position: sticky;
-    top: 12px;
+/* khung chi tiết (món / đầu bếp / nguyên liệu): ghim cố định ở giữa nửa phải màn hình, cuộn danh sách thế nào nó cũng đi theo.
+   .chi-tiet vẫn là cột giữ chỗ (đẩy lưới sang trái); .ct là fixed nên không trôi theo trang.
+   Chiều ngang fixed lấy đúng vị trí cột giữ chỗ (không đặt left/right). Danh sách thông tin dài thì cuộn bên trong khung. */
+@media (min-width: 901px) {
+  .bep.ds .ct {
+    position: fixed;
+    top: calc(
+      50% + 18px
+    ); /* ảnh tròn lố lên trên ~70px, nút ở góc dưới phải ~80px: căn giữa phần nhìn thấy */
+    translate: 0 -50%;
+    margin-top: 0;
+    z-index: 5;
+  }
+  .bep.ds .ct-ds {
+    max-height: max(120px, calc(100vh - 500px));
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
   }
 }
 @media (max-width: 700px) {

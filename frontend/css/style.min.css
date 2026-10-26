@@ -3475,11 +3475,19 @@ body.dang-tai {
 .bep.ds .ct-ds dd:last-child {
   border-bottom: 0;
 }
-@media (min-height: 780px) and (min-width: 901px) {
-  .bep.ds .chi-tiet {
-    align-self: flex-start;
-    position: sticky;
-    top: 12px;
+@media (min-width: 901px) {
+  .bep.ds .ct {
+    position: fixed;
+    top: calc(50% + 18px);
+    translate: 0 -50%;
+    margin-top: 0;
+    z-index: 5;
+  }
+  .bep.ds .ct-ds {
+    max-height: max(120px, calc(100vh - 500px));
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
   }
 }
 @media (max-width: 700px) {
