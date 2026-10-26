@@ -1,0 +1,36 @@
+{
+  "name": "restaurant-app",
+  "version": "1.0.0",
+  "description": "SSR Express + Sequelize (code-first) + Supabase Postgres: trang người dùng và trang quản trị CRUD",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:seed": "node scripts/seed.js",
+    "build:css": "node scripts/build-css.js",
+    "db:thumbs": "node scripts/make-thumbs.js",
+    "mock": "node mock-server/server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed:reset": "node scripts/seed.js --reset --yes",
+    "test:search": "node scripts/test-search.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "compression": "^1.8.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "method-override": "^3.0.0",
+    "multer": "^2.4.0",
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.5",
+    "sharp": "^0.35.5",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "clean-css": "^5.3.3"
+  }
+}

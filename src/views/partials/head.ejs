@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= title %></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<%# la: có lá bay (trang phố) | am: kiểu âm nền của trang (pho | khach | bep | quan) %>
+<body<%- locals.la ? ' data-la' : '' %> data-am="<%= locals.am || 'quan' %>">
+<button class="nut nut-phu nut-am" id="nut-am" aria-label="Bật/tắt âm thanh">🔊</button>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="thuy-mac"><feTurbulence type="fractalNoise" baseFrequency=".02 .03" numOctaves="3" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter></svg>

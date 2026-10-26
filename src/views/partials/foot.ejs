@@ -1,0 +1,6 @@
+<%# scripts: danh sách file JS riêng của từng trang, nạp SAU common.js %>
+<script src="/js/am-thanh.js"></script>
+<script src="/js/common.js"></script>
+<% (locals.scripts || []).forEach(function (s) { %><script src="<%= s %>"></script>
+<% }) %></body>
+</html>

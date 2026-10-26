@@ -1,0 +1,26 @@
+<%- include('../partials/head', { title: 'Quản trị ' + r.title, am: 'bep' }) %>
+<div class="nen"></div><div class="mo"></div>
+<main class="man bep vao-tu-duoi">
+  <%- include('_nav', { active: r.key, themHref: '/admin/' + r.key + '/new', themLabel: '+ Thêm ' + r.singular }) %>
+  <% if (flash) { %><div class="bao bao-tinh"><%= flash %></div><% } %>
+  <% if (!rows.length) { %>
+    <p class="trong-lop">Chưa có <%= r.singular %> nào. Bấm “Thêm” để tạo mới.</p>
+  <% } else { %>
+  <div class="luoi">
+    <% rows.forEach(row => { const t = r.tile(row); %>
+      <a class="o" href="/admin/<%= r.key %>/<%= row.id %>/edit" title="Bấm để xem / sửa / xóa">
+        <span class="bieu"><%= t.icon %></span><b><%= t.title %></b><small><%= t.sub %></small>
+      </a>
+    <% }) %>
+  </div>
+  <% } %>
+  <%# dãy trang luôn hiện, kể cả khi chỉ có 1 trang %>
+  <nav class="phan-trang" aria-label="Phân trang">
+    <% if (page === 1) { %><span class="nut nut-phu tat">&lt;</span><% } else { %><a class="nut nut-phu" href="?page=<%= page - 1 %>" aria-label="Trang trước">&lt;</a><% } %>
+    <% for (let n = 1; n <= totalPages; n++) { %>
+      <a class="nut <%= n === page ? 'on' : 'nut-phu' %>" href="?page=<%= n %>"><%= n %></a>
+    <% } %>
+    <% if (page === totalPages) { %><span class="nut nut-phu tat">&gt;</span><% } else { %><a class="nut nut-phu" href="?page=<%= page + 1 %>" aria-label="Trang sau">&gt;</a><% } %>
+  </nav>
+</main>
+<%- include('../partials/foot') %>

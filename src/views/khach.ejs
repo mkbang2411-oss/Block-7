@@ -1,0 +1,27 @@
+<%- include('partials/head', { title: 'Quán Ba Cô Gái - Thực đơn', am: 'khach' }) %>
+<main class="man khach vao-tu-duoi">
+  <div class="goc">
+    <a class="nut nut-phu" href="/">Ra phố</a>
+    <span class="goc-phai">
+      <a class="nut nut-phu" href="/dishes">Danh sách &amp; tìm món</a>
+      <button class="nut" id="nut-hang">Hàng chờ (0)</button>
+    </span>
+  </div>
+  <% if (!mon.length) { %>
+    <div class="trong"><div class="hop"><h2>Quán chưa có món</h2><p>Đầu bếp chưa thêm món nào vào thực đơn.</p></div></div>
+  <% } else { %>
+  <div class="ban"><div class="ghe-vong"><% [-50, -25, 0, 25, 50].forEach(a => { %><i class="ghe" style="transform:rotate(<%= a %>deg) translateY(-85vh)"></i><% }) %></div><div class="mat"><div class="vong" id="vong">
+    <% mon.forEach((x, i) => { %><button class="mon" data-i="<%= i %>"><span class="dia"><em><%= x.icon %></em></span><b><%= x.ten %></b></button><% }) %>
+  </div></div></div>
+  <% } %>
+  <div class="nang" aria-hidden="true">
+    <% [[4, 7], [20, 10], [38, 6], [56, 9]].forEach((t, k) => { %><i class="tia" style="--l:<%= t[0] %>%;--w:<%= t[1] %>vw;--dl:-<%= k * 2 %>s"></i><% }) %>
+    <% for (let i = 0; i < 16; i++) { %><i class="bui" style="--x:<%= Math.floor(Math.random() * 90) %>%;--y:<%= Math.floor(Math.random() * 85) %>%;--s:<%= 2 + Math.floor(Math.random() * 4) %>px;--t:<%= 6 + Math.floor(Math.random() * 6) %>s;--dl:-<%= Math.floor(Math.random() * 10) %>s"></i><% } %>
+  </div>
+  <% if (mon.length > 1) { %>
+  <button class="nut mui-ten trai" id="trai" aria-label="Món trước">‹</button>
+  <button class="nut mui-ten phai" id="phai" aria-label="Món sau">›</button>
+  <% } %>
+</main>
+<script>window.MON = <%- JSON.stringify(mon).replace(/</g, '\\u003c') %>;</script>
+<%- include('partials/foot', { scripts: ['/js/khach.js'] }) %>

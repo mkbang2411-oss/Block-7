@@ -1,0 +1,36 @@
+<%- include('partials/head', { title: 'Phố Ba Cô Gái', la: true, am: 'pho' }) %>
+<main class="man canh">
+  <div class="may m1"></div><div class="may m2"></div>
+  <div class="xa xa1"></div><div class="xa xa2"></div>
+  <div id="pho" class="pho">
+    <% pho.forEach(n => { const tang = Math.max(2, Math.round((n.h - 170) / 100)); %>
+    <article class="nha<%= n.ba ? ' nha-ba' : '' %>" style="--w:<%= n.w %>px;--h:<%= n.h %>px;--tuong:<%= n.tuong %>;--mai:<%= n.mai %>">
+      <% if (n.cay) { %><i class="cay" style="left:<%= n.cayX %>%"></i><% } %>
+      <div class="mai"></div>
+      <div class="tuong">
+        <% for (let i = 0; i < tang - 1; i++) { %><div class="tang"><% for (let j = 0; j < (n.w > 340 ? 3 : 2); j++) { %><i class="cua-so"></i><% } %></div><% } %>
+        <div class="tang tret">
+          <span class="bang"><%= n.ba ? 'Ba Cô Gái' : n.ten %></span>
+          <% if (n.ba) { %><small class="phu">Món ngon nhà làm</small><i class="den"></i><i class="den d2"></i><% } %>
+          <i class="cua"></i>
+        </div>
+      </div>
+      <% if (n.xe) { %><div class="xe" style="--xl:<%= n.xeX %>%"><i class="du"></i><i class="hx"></i></div><% } %>
+    </article>
+    <% }) %>
+  </div>
+  <div class="via-he"></div>
+  <div class="truoc"></div>
+  <p class="goi-y">Kéo để dạo phố</p>
+</main>
+
+<%# Form thật: POST /login (role=user|admin). JS chỉ thêm hiệu ứng chuyển cảnh trước khi gửi form %>
+<div class="lop" id="hop-vai" hidden>
+  <form class="hop" id="form-vai" method="post" action="/login">
+    <h2>Bạn vào quán với vai gì?</h2>
+    <label class="chon"><input type="radio" name="role" value="user" required><span class="tick"></span><b>Khách hàng</b><small>Xem thực đơn và gọi món</small></label>
+    <label class="chon"><input type="radio" name="role" value="admin" required><span class="tick"></span><b>Đầu bếp</b><small>Quản lí món ăn, đầu bếp, nguyên liệu</small></label>
+    <div class="nut-hang"><button type="button" class="nut nut-phu" id="de-sau">Để sau</button><button class="nut" id="vao" disabled>Vào quán</button></div>
+  </form>
+</div>
+<%- include('partials/foot', { scripts: ['/js/home.js'] }) %>

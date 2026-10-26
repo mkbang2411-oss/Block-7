@@ -1,0 +1,13 @@
+<%- include('partials/head', { title: String(status), am: 'quan' }) %>
+<main class="man trang cuon">
+  <div class="thanh"><a class="nut nut-phu" href="/">Ra phố</a></div>
+  <div class="hop hop-giua">
+    <h2><%= status %></h2>
+    <p><%= message %></p>
+    <div class="nut-hang">
+      <% if (status === 403) { %><form method="post" action="/logout" class="form-tran"><button class="nut nut-phu">Đổi vai</button></form><% } %>
+      <a class="nut" href="/khach">Về thực đơn</a>
+    </div>
+  </div>
+</main>
+<%- include('partials/foot') %>

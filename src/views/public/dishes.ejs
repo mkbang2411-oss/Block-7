@@ -1,0 +1,28 @@
+<%- include('../partials/head', { title: 'Danh sách món ăn', am: 'quan' }) %>
+<main class="man trang cuon">
+  <%- include('../partials/thanh-tren', { themHref: '/khach', themLabel: 'Bàn chọn món' }) %>
+  <div class="noi-dung">
+    <h2>Danh sách món ăn</h2>
+    <form method="get" action="/dishes" class="tim">
+      <input type="text" name="q" value="<%= q %>" placeholder="Tìm theo tên món...">
+      <button class="nut">Tìm</button>
+      <% if (q) { %><a class="nut nut-phu" href="/dishes">Xóa tìm kiếm</a><% } %>
+    </form>
+    <% if (!dishes.length) { %>
+      <p class="phu-chu">Không có món nào<%= q ? ` khớp với "${q}"` : '' %>.</p>
+    <% } else { %>
+      <div class="luoi-cuon">
+        <% dishes.forEach(d => { %>
+          <a class="o" href="/dishes/<%= d.id %>">
+            <span class="bieu"><%= dishIcon(d) %></span>
+            <b><%= d.name %></b>
+            <small><%= formatPrice(d.price) %> · <%= d.category %></small>
+            <small><%= d.chef ? 'Đầu bếp ' + d.chef.name : '' %></small>
+            <span class="the <%= d.available ? 'ok' : 'het' %>"><%= d.available ? 'Còn bán' : 'Hết món' %></span>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/foot') %>

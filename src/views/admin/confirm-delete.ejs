@@ -1,0 +1,19 @@
+<%- include('../partials/head', { title: 'Xác nhận xóa', am: 'bep' }) %>
+<div class="nen"></div><div class="mo"></div>
+<main class="man bep cuon">
+  <%- include('_nav', { active: r.key }) %>
+  <div class="hop hop-giua">
+    <h2>Xóa <%= r.singular %>?</h2>
+    <% if (blockReason) { %>
+      <div class="bao-loi"><b><%= r.label(record) %></b>: <%= blockReason %></div>
+      <div class="nut-hang"><a class="nut" href="/admin/<%= r.key %>">Quay lại danh sách</a></div>
+    <% } else { %>
+      <p>Bạn chắc chắn muốn xóa <%= r.singular %> <b><%= r.label(record) %></b> không? Thao tác không thể hoàn tác.</p>
+      <form method="post" action="/admin/<%= r.key %>/<%= record.id %>?_method=DELETE" class="nut-hang">
+        <a class="nut nut-phu" href="/admin/<%= r.key %>">Không xóa</a>
+        <button class="nut">Xóa</button>
+      </form>
+    <% } %>
+  </div>
+</main>
+<%- include('../partials/foot') %>

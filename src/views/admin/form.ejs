@@ -1,0 +1,48 @@
+<% const isEdit = !!record; %>
+<%- include('../partials/head', { title: (isEdit ? 'Sửa ' : 'Thêm ') + r.singular, am: 'bep' }) %>
+<div class="nen"></div><div class="mo"></div>
+<main class="man bep cuon">
+  <%- include('_nav', { active: r.key }) %>
+  <%# novalidate: để server kiểm tra và trả 400 %>
+  <form method="post" novalidate class="hop hop-giua rong"
+        action="<%= isEdit ? `/admin/${r.key}/${record.id}?_method=PATCH` : `/admin/${r.key}` %>">
+    <h2><%= isEdit ? 'Sửa' : 'Thêm' %> <%= r.singular %></h2>
+    <% if (Object.keys(errors).length) { %><div class="bao-loi">Dữ liệu chưa hợp lệ, vui lòng kiểm tra lại (giá trị đã nhập được giữ nguyên).</div><% } %>
+    <% r.fields.forEach(f => { const v = values[f.name]; %>
+      <div class="truong <%= errors[f.name] ? 'co-loi' : '' %>">
+        <% if (f.type === 'checkbox') { %>
+          <label class="check"><input type="checkbox" name="<%= f.name %>" <%= v ? 'checked' : '' %>> <%= f.label %></label>
+        <% } else { %>
+          <label for="<%= f.name %>"><%= f.label %></label>
+          <% if (f.type === 'textarea') { %>
+            <textarea id="<%= f.name %>" name="<%= f.name %>" rows="4"><%= v %></textarea>
+          <% } else if (f.type === 'select') { %>
+            <select id="<%= f.name %>" name="<%= f.name %>">
+              <option value=""><%= f.placeholder || '— Không chọn —' %></option>
+              <% options[f.name].forEach(o => { %>
+                <option value="<%= o.value %>" <%= String(v) === o.value ? 'selected' : '' %>><%= o.label %></option>
+              <% }) %>
+            </select>
+          <% } else if (f.type === 'multiselect') { %>
+            <select id="<%= f.name %>" name="<%= f.name %>" multiple size="6">
+              <% options[f.name].forEach(o => { %>
+                <option value="<%= o.value %>" <%= (v || []).includes(o.value) ? 'selected' : '' %>><%= o.label %></option>
+              <% }) %>
+            </select>
+            <small class="goi-y-nho">Giữ Ctrl/Cmd để chọn nhiều.</small>
+          <% } else { %>
+            <input type="text" id="<%= f.name %>" name="<%= f.name %>" value="<%= v %>" <%= f.inputmode ? `inputmode=${f.inputmode}` : '' %>>
+          <% } %>
+        <% } %>
+        <% if (f.hint) { %><small class="goi-y-nho"><%= f.hint %></small><% } %>
+        <% if (errors[f.name]) { %><small class="chu-loi"><%= errors[f.name] %></small><% } %>
+      </div>
+    <% }) %>
+    <div class="nut-hang">
+      <a class="nut nut-phu" href="/admin/<%= r.key %>">Hủy</a>
+      <% if (isEdit) { %><a class="nut nut-phu" href="/admin/<%= r.key %>/<%= record.id %>/delete">Xóa</a><% } %>
+      <button class="nut"><%= isEdit ? 'Lưu thay đổi' : 'Thêm mới' %></button>
+    </div>
+  </form>
+</main>
+<%- include('../partials/foot') %>

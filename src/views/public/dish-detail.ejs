@@ -1,0 +1,23 @@
+<%- include('../partials/head', { title: dish.name, am: 'quan' }) %>
+<main class="man trang cuon">
+  <%- include('../partials/thanh-tren', { themHref: '/dishes', themLabel: '← Danh sách món' }) %>
+  <div class="hop hop-giua rong">
+    <div class="anh-mon to"><%= dishIcon(dish) %></div>
+    <h2><%= dish.name %></h2>
+    <p class="gia"><%= formatPrice(dish.price) %></p>
+    <dl>
+      <dt>Mô tả</dt><dd><%= dish.description || '—' %></dd>
+      <dt>Danh mục</dt><dd><%= dish.category || '—' %></dd>
+      <dt>Tình trạng</dt><dd><span class="the <%= dish.available ? 'ok' : 'het' %>"><%= dish.available ? 'Còn bán' : 'Hết món' %></span></dd>
+      <dt>Đầu bếp</dt><dd><%= dish.chef ? dish.chef.name + (dish.chef.specialty ? ' (' + dish.chef.specialty + ')' : '') : '—' %></dd>
+      <dt>Nguyên liệu</dt>
+      <dd>
+        <% if (dish.ingredients.length) { %>
+          <ul><% dish.ingredients.forEach(i => { %><li><%= i.name %> <small>(<%= i.unit %>)</small></li><% }) %></ul>
+        <% } else { %>—<% } %>
+      </dd>
+    </dl>
+    <div class="nut-hang"><a class="nut nut-phu" href="/dishes">Danh sách món</a><a class="nut" href="/khach">Chọn món ở bàn</a></div>
+  </div>
+</main>
+<%- include('../partials/foot') %>

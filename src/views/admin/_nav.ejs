@@ -1,0 +1,4 @@
+<%- include('../partials/thanh-tren', {
+  tabs: navResources.map(n => ({ href: '/admin/' + n.key, label: n.title, on: active === n.key })),
+  themHref: locals.themHref, themLabel: locals.themLabel
+}) %>

@@ -1,0 +1,13 @@
+<%- include('partials/head', { title: 'Đăng nhập', am: 'quan' }) %>
+<main class="man trang cuon">
+  <div class="thanh"><a class="nut nut-phu" href="/">Ra phố</a></div>
+  <form class="hop hop-giua" method="post" action="/login">
+    <h2>Vào quán</h2>
+    <p class="phu-chu">Không cần mật khẩu, chỉ chọn vai.</p>
+    <% if (error) { %><div class="bao-loi"><%= error %></div><% } %>
+    <label class="chon"><input type="radio" name="role" value="user" required><span class="tick"></span><b>Khách hàng</b><small>Xem thực đơn và gọi món</small></label>
+    <label class="chon"><input type="radio" name="role" value="admin" required><span class="tick"></span><b>Đầu bếp</b><small>Quản lí món ăn, đầu bếp, nguyên liệu</small></label>
+    <div class="nut-hang"><button class="nut">Vào quán</button></div>
+  </form>
+</main>
+<%- include('partials/foot') %>
