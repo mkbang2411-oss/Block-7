@@ -1,7 +1,10 @@
 // Tìm kiếm + lọc + sắp xếp + phân trang cho GET /api/:resource, chạy HOÀN TOÀN TRÊN POSTGRESQL.
 //
 // Tham số (đều tùy chọn):
-//   mode      basic (mặc định) | fulltext | fuzzy
+//   mode      basic (mặc định) | advanced | fulltext | fuzzy
+//             basic    = tên chứa từ khóa (+ bộ lọc nếu có)
+//             advanced = q + category/minPrice/maxPrice/available... ghép bằng AND (cùng luật khớp tên với basic)
+//             fulltext / fuzzy = có điểm, mặc định sắp theo độ liên quan
 //   q         từ khóa (tối đa 100 ký tự; rỗng / chỉ khoảng trắng = không có điều kiện tìm)
 //   sortBy    name | newest | price (món ăn) | relevance (chỉ khi mode=fulltext/fuzzy)
 //   sortOrder asc | desc            (cũ vẫn dùng được: sort=name_asc|name_desc|newest|price_asc|price_desc|relevance)
@@ -15,7 +18,8 @@
 const { QueryTypes } = require("sequelize");
 const { CATEGORIES, UNITS } = require("../constants");
 
-const MODES = ["basic", "fulltext", "fuzzy"];
+const MODES = ["basic", "advanced", "fulltext", "fuzzy"];
+const SCORED = ["fulltext", "fuzzy"]; // hai mode có điểm (sắp theo độ liên quan)
 const MAX_Q = 100;
 const MAX_PAGE_SIZE = 60;
 const DEFAULT_PAGE_SIZE = 9;
@@ -151,7 +155,7 @@ function parseListQuery(key, query) {
       sortOrder = query.sortOrder;
     else errors.sortOrder = "sortOrder phải là asc hoặc desc";
   }
-  const hasKeyword = q.length > 0 && mode !== "basic";
+  const hasKeyword = q.length > 0 && SCORED.includes(mode);
   if (sortBy === "relevance" && !hasKeyword) sortBy = null; // không có từ khóa thì không có điểm liên quan -> về mặc định
   if (!sortBy) sortBy = hasKeyword ? "relevance" : "name"; // mode fulltext/fuzzy có từ khóa: mặc định theo độ liên quan
   if (sortBy === "relevance") sortOrder = "desc";
@@ -183,7 +187,7 @@ function parseListQuery(key, query) {
   )
     errors.maxPrice = "maxPrice phải lớn hơn hoặc bằng minPrice";
 
-  // --- phân trang: page nguyên >= 1 (vượt tổng số trang thì kẹp về trang cuối), pageSize 1..MAX ---
+  // --- phân trang: page nguyên >= 1 (vượt tổng số trang thì trả items:[], KHÔNG kẹp), pageSize 1..MAX ---
   let page = 1;
   if (!blank(query.page)) {
     if (
@@ -240,8 +244,8 @@ function build(key, p) {
     p.q.split(" ").forEach((t, i) => {
       rep[`t${i}`] = t;
     });
-    if (p.mode === "basic") {
-      where.push(chuaTu(cfg, p));
+    if (p.mode === "basic" || p.mode === "advanced") {
+      where.push(chuaTu(cfg, p)); // advanced khớp tên giống basic; phần "nâng cao" là các bộ lọc AND bên dưới
     } else if (p.mode === "fulltext") {
       rep.q = p.q;
       where.push(`${cfg.tsv} @@ plainto_tsquery('simple', f_norm(:q))`);
@@ -318,7 +322,7 @@ async function runList(sequelize, key, p, { all = false, focus = null } = {}) {
     );
     if (hit.length) page = Math.floor((Number(hit[0].rn) - 1) / p.pageSize) + 1;
   }
-  page = Math.min(Math.max(page, 1), totalPages); // page vượt giới hạn -> trang cuối hợp lệ, không báo lỗi
+  // page vượt tổng số trang (không dùng focus) -> OFFSET vượt quá dữ liệu nên items rỗng, ok:true; page trả về đúng như đã hỏi
   const rows = await run(
     `SELECT ${b.alias}.id FROM ${b.from} ${b.where} ORDER BY ${b.order} LIMIT :limit OFFSET :offset`,
     {

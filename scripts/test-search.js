@@ -92,8 +92,32 @@ const q = (o) => "?" + new URLSearchParams(o).toString();
       `/api/dishes?pageSize=10&page=${Math.ceil(N / 10) + 50}`,
     );
     t(
-      "Phân trang: page vượt giới hạn -> kẹp về trang cuối",
-      last.meta.page === Math.ceil(N / 10) && last.data.length > 0,
+      "Phân trang: page vượt giới hạn -> ok:true, items rỗng, total vẫn đúng (không kẹp)",
+      last.body.ok === true &&
+        last.data.length === 0 &&
+        last.meta.total === N &&
+        last.meta.page === Math.ceil(N / 10) + 50,
+    );
+    const adv = await get(
+      "/api/dishes?mode=advanced&q=pho&available=false&pageSize=60",
+    );
+    const bas = await get(
+      "/api/dishes?mode=basic&q=pho&available=false&pageSize=60",
+    );
+    t(
+      "mode=advanced được chấp nhận, ghép q + available bằng AND",
+      adv.body.ok === true &&
+        adv.meta.mode === "advanced" &&
+        adv.data.every((d) => d.available === false),
+    );
+    t(
+      "advanced và basic cùng q + cùng bộ lọc -> cùng kết quả",
+      names(adv).join("|") === names(bas).join("|"),
+    );
+    t(
+      "advanced: minPrice > maxPrice -> VALIDATION_FAILED",
+      (await get("/api/dishes?mode=advanced&q=pho&minPrice=9&maxPrice=1")).err
+        ?.code === "VALIDATION_FAILED",
     );
     for (const bad of [
       "page=0",

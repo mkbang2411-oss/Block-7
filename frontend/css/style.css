@@ -2634,6 +2634,28 @@ body.dang-tai {
   outline: 2px solid #4f9f86;
   outline-offset: 1px;
 }
+/* kiểu tìm: 4 nút trên 1 hàng, khoảng cách hẹp cho vừa phiếu lọc */
+.doan-luoi {
+  display: flex;
+  gap: 0;
+  padding: 3px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.doan-luoi .doan-nut {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 5px 4px;
+  font-size: 0.86rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.ben-goi-y {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
 
 /* ---- thanh kéo khoảng giá 7 nấc: js/gia-keo.js ---- */
 .gk {

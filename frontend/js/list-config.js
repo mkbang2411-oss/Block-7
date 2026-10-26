@@ -23,9 +23,25 @@ const khopTen = (ten, q) => {
   return tu.every((t) => n.includes(t));
 };
 
-// Ô tìm kiếm luôn dùng kiểu GẦN ĐÚNG (server: mode=fuzzy): tên chứa từ khóa HOẶC gõ sai chính tả vẫn ra (pg_trgm).
-// Không còn ô chọn "Kiểu tìm" nữa; apiQuery() tự gắn mode=fuzzy mỗi khi có từ khóa.
-export const MODE_TIM = "fuzzy";
+// ---------- kiểu tìm (mode gửi lên server) ----------
+// Chọn bằng nút bấm trong phiếu lọc (giống A → Z / Z → A). Mặc định giữ "Gần đúng" như trước.
+//   basic    tên chứa từ khóa              advanced  từ khóa + các bộ lọc ghép AND
+//   fulltext tên + mô tả (to_tsvector)     fuzzy     tên gần giống (pg_trgm, ngưỡng 0.3)
+export const MODES = [
+  ["basic", "Thường", "Tìm món có tên chứa chữ bạn gõ"],
+  [
+    "advanced",
+    "Nâng cao",
+    "Tìm theo tên, kèm các bộ lọc bên dưới (danh mục, giá, tình trạng)",
+  ],
+  ["fulltext", "Toàn văn", "Tìm cả trong tên lẫn phần mô tả món"],
+  ["fuzzy", "Gần đúng", "Gõ sai chính tả một chút vẫn tìm ra"],
+];
+export const MODE_MAC_DINH = "fuzzy";
+export const hopLeMode = (m) => MODES.some(([k]) => k === m);
+// chỉ fulltext / fuzzy có điểm -> mới có "Độ liên quan"
+export const coDiem = (mode) => mode === "fulltext" || mode === "fuzzy";
+export const coLienQuan = (S) => !!S.q && coDiem(S.mode);
 
 // ---------- sắp xếp: chia 2 khu ----------
 //   khu 1: TRƯỜNG sắp xếp (Tên, Giá, ...)      khu 2: THỨ TỰ (A → Z / Z → A)
@@ -39,8 +55,9 @@ const F_MOI = ["newest", "Mới thêm"];
 const F_REL = ["relevance", "Độ liên quan"];
 export const BY_MAC_DINH = "name";
 export const DIR_MAC_DINH = "asc";
-// có từ khóa thì mặc định xếp theo độ liên quan (kết quả giống nhất lên đầu), không thì theo tên
-export const byMacDinh = (q) => (q ? "relevance" : BY_MAC_DINH);
+// có từ khóa + mode có điểm (fulltext / fuzzy) thì mặc định xếp theo độ liên quan, không thì theo tên
+export const byMacDinh = (q, mode = MODE_MAC_DINH) =>
+  q && coDiem(mode) ? "relevance" : BY_MAC_DINH;
 
 // ---------- khoảng giá: thanh kéo 7 nấc ----------
 // Thanh kéo có 2 núm (giá từ / giá đến) và 7 mốc; núm trái ở đầu thanh (0đ) = không giới hạn dưới,
@@ -158,7 +175,7 @@ export function luuView(v) {
 export const nhieuTrang = (S) => S.view !== "pagination"; // load more / infinite: danh sách tích lũy nhiều trang
 
 // ---------- trạng thái <-> URL ----------
-// S = { q, by, dir, f: { tênBộLọc: giáTrị }, page, hasPage, sel, view }   (by = trường sắp xếp, dir = asc | desc)
+// S = { q, mode, by, dir, f: { tênBộLọc: giáTrị }, page, hasPage, sel, view }   (by = trường sắp xếp, dir = asc | desc)
 const LEGACY_SORT = {
   name_asc: ["name", "asc"],
   name_desc: ["name", "desc"],
@@ -172,6 +189,7 @@ export function docTrang(resKey, query, opts) {
   const v = query.get("view");
   const S = {
     q: (query.get("q") || "").trim(),
+    mode: hopLeMode(query.get("mode")) ? query.get("mode") : MODE_MAC_DINH,
     by: BY_MAC_DINH,
     dir: DIR_MAC_DINH,
     f: {},
@@ -180,7 +198,7 @@ export function docTrang(resKey, query, opts) {
     sel: null,
     view: hopLeView(v) ? v : layViewDaLuu(),
   };
-  S.by = byMacDinh(S.q);
+  S.by = byMacDinh(S.q, S.mode);
   const hopBy = (k) => cfg.fields.some(([x]) => x === k);
   // link kiểu cũ ?sort=price_asc vẫn mở được
   const cu = LEGACY_SORT[query.get("sort")];
@@ -188,7 +206,7 @@ export function docTrang(resKey, query, opts) {
   if (hopBy(query.get("sortBy"))) S.by = query.get("sortBy");
   const dir = query.get("sortOrder");
   if (dir === "asc" || dir === "desc") S.dir = dir;
-  if (S.by === "relevance" && !S.q) S.by = BY_MAC_DINH; // không có từ khóa thì không có độ liên quan
+  if (S.by === "relevance" && !coLienQuan(S)) S.by = BY_MAC_DINH; // không có từ khóa / mode không có điểm thì không có độ liên quan
   for (const f of cfg.filters) {
     const v = (query.get(f.name) || "").trim();
     let ok = "";
@@ -209,7 +227,8 @@ export function toSearch(resKey, S) {
   const cfg = LIST[resKey];
   const p = new URLSearchParams();
   if (S.q) p.set("q", S.q);
-  if (S.by !== byMacDinh(S.q)) p.set("sortBy", S.by);
+  if (S.mode !== MODE_MAC_DINH) p.set("mode", S.mode);
+  if (S.by !== byMacDinh(S.q, S.mode)) p.set("sortBy", S.by);
   if (S.by !== "relevance" && S.dir !== DIR_MAC_DINH) p.set("sortOrder", S.dir);
   for (const f of cfg.filters) if (S.f[f.name]) p.set(f.name, S.f[f.name]);
   // chế độ mặc định chỉ được bỏ khỏi URL khi cũng là chế độ đang lưu, để link gửi cho người khác không bị đổi chế độ
@@ -224,7 +243,7 @@ export function toSearch(resKey, S) {
 export function apiQuery(resKey, S, { focus = false } = {}) {
   const o = { q: S.q, sortBy: S.by, ...S.f };
   if (S.by !== "relevance") o.sortOrder = S.dir;
-  if (S.q) o.mode = MODE_TIM; // luôn tìm gần đúng
+  if (S.q) o.mode = S.mode;
   if (focus && S.sel) o.focus = S.sel;
   else o.page = S.page;
   return o;

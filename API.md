@@ -90,7 +90,7 @@ Lọc và sắp xếp chạy trên **toàn bộ dữ liệu**, sau đó mới c�
 | `category`, `available`, `minPrice`, `maxPrice` | món ăn      | danh mục (thuộc `categories`), `true`/`false`, khoảng giá (số nguyên ≥ 0, `minPrice` ≤ `maxPrice`)                                                                    |
 | `specialty`                                     | đầu bếp     | chuyên môn chứa từ khóa (không phân biệt hoa/thường/dấu)                                                                                                              |
 | `unit`                                          | nguyên liệu | đơn vị (thuộc `units`)                                                                                                                                                |
-| `page`                                          | cả 3        | từ 1, 9 mục/trang, vượt giới hạn thì kẹp về trang hợp lệ                                                                                                              |
+| `page`                                          | cả 3        | từ 1, 9 mục/trang; vượt tổng số trang thì trả `data: []` (vẫn `ok:true`, `meta.total` đúng), không kẹp                                                                |
 | `focus`                                         | cả 3        | id một bản ghi: server trả về **đúng trang đang chứa bản ghi đó** (ưu tiên hơn `page`; không có trong kết quả thì dùng `page`). Dùng khi vào bằng bookmark `?sel=...` |
 | `all=true`                                      | cả 3        | trả toàn bộ (không phân trang), `meta` chỉ có `total` và `sort`                                                                                                       |
 
@@ -158,4 +158,4 @@ Server trả `index.html` cho mọi đường dẫn GET không phải `/api` và
 
 ## Bổ sung: tìm kiếm, sắp xếp, phân trang trên PostgreSQL
 
-`GET /api/dishes | /api/chefs | /api/ingredients` nhận thêm: `mode` (`basic` | `fulltext` | `fuzzy`), `sortBy` (`name` | `newest` | `price` | `relevance`), `sortOrder` (`asc` | `desc`), `pageSize` (1–60, mặc định 9), `chefId` (món ăn), `chef` (món ăn: tên đầu bếp chứa chuỗi, không phân biệt hoa/thường/dấu). `meta` trả thêm `pageSize`, `sortBy`, `sortOrder`, `mode`. `sort=price_asc` kiểu cũ vẫn dùng được. `page` phải là số nguyên ≥ 1 (sai → `VALIDATION_FAILED`, vượt tổng số trang → kẹp về trang cuối). Chi tiết: mục 10 của README.md.
+`GET /api/dishes | /api/chefs | /api/ingredients` nhận thêm: `mode` (`basic` | `advanced` | `fulltext` | `fuzzy`), `sortBy` (`name` | `newest` | `price` | `relevance`), `sortOrder` (`asc` | `desc`), `pageSize` (1–60, mặc định 9), `chefId` (món ăn), `chef` (món ăn: tên đầu bếp chứa chuỗi, không phân biệt hoa/thường/dấu). `meta` trả thêm `pageSize`, `sortBy`, `sortOrder`, `mode`. `sort=price_asc` kiểu cũ vẫn dùng được. `page` phải là số nguyên ≥ 1 (sai → `VALIDATION_FAILED`, vượt tổng số trang → `data: []`, không kẹp). Chi tiết: mục 10 của README.md.

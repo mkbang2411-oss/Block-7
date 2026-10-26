@@ -28,6 +28,9 @@ import {
 import {
   LIST,
   DIRS,
+  MODES,
+  MODE_MAC_DINH,
+  coLienQuan,
   BY_MAC_DINH,
   DIR_MAC_DINH,
   byMacDinh,
@@ -129,6 +132,12 @@ const nutThuTu = (S) =>
     ([k, lb]) =>
       `<button type="button" class="doan-nut${S.dir === k && S.by !== "relevance" ? " on" : ""}" data-dir="${k}" aria-pressed="${S.dir === k && S.by !== "relevance"}"${S.by === "relevance" ? " disabled" : ""}>${lb}</button>`,
   ).join("");
+// Kiểu tìm: 4 nút bấm (Thường / Nâng cao / Toàn văn / Gần đúng), cùng kiểu với nút A → Z / Z → A
+const nutMode = (S) =>
+  MODES.map(
+    ([k, lb, goiY]) =>
+      `<button type="button" class="doan-nut${S.mode === k ? " on" : ""}" data-mode="${k}" aria-pressed="${S.mode === k}" title="${esc(goiY)}">${lb}</button>`,
+  ).join("");
 // Sidebar giấy ghi món (mở bằng dây rèm, xem js/day-keo.js): sắp xếp + bộ lọc + khoảng giá + cách hiển thị danh sách.
 // Các ô giữ nguyên id / data-* như trước nên logic lọc ở mount() không đổi, chỉ đổi chỗ hiển thị.
 function benLoc(resKey, S, opts) {
@@ -137,7 +146,7 @@ function benLoc(resKey, S, opts) {
   const truong = cfg.fields.map(([k, lb]) => [
     k,
     lb,
-    k === "relevance" && !S.q,
+    k === "relevance" && !coLienQuan(S),
   ]);
   const locs = cfg.filters.filter((f) => !f.an);
   const coLocMuc = locs.length > 0 || cfg.gia;
@@ -153,7 +162,12 @@ function benLoc(resKey, S, opts) {
   </header>
   <div class="ben-than">
     <section class="ben-muc">
-      <h4><i>1</i>Sắp xếp</h4>
+      <h4><i>1</i>Kiểu tìm</h4>
+      <div class="doan doan-luoi" role="group" aria-label="Kiểu tìm" data-mode-nhom>${nutMode(S)}</div>
+      <p class="ben-goi-y" data-mode-goi-y>${esc(MODES.find(([k]) => k === S.mode)[2])}</p>
+    </section>
+    <section class="ben-muc">
+      <h4><i>2</i>Sắp xếp</h4>
       <div class="ben-luoi">
         <div class="loc-o"><label for="loc-by">Sắp xếp theo</label>${htmlChon({ id: "loc-by", ten: "by", gia: S.by, ds: truong })}</div>
         <div class="loc-o"><span class="loc-nhan" id="loc-dir-nhan">Thứ tự</span><div class="doan" role="group" aria-labelledby="loc-dir-nhan" data-dir-nhom>${nutThuTu(S)}</div></div>
@@ -162,14 +176,14 @@ function benLoc(resKey, S, opts) {
     ${
       coLocMuc
         ? `<section class="ben-muc">
-      <h4><i>2</i>Bộ lọc</h4>
+      <h4><i>3</i>Bộ lọc</h4>
       ${locs.length ? `<div class="ben-luoi">${locs.map((f) => oLoc(f, S, opts)).join("")}</div>` : ""}
       ${cfg.gia ? htmlGia(S.f.minPrice, S.f.maxPrice) : ""}
     </section>`
         : ""
     }
     <section class="ben-muc">
-      <h4><i>${coLocMuc ? 3 : 2}</i>Cách hiển thị danh sách</h4>
+      <h4><i>${coLocMuc ? 4 : 3}</i>Cách hiển thị danh sách</h4>
       ${htmlCheDo(S.view)}
     </section>
   </div>
@@ -276,9 +290,22 @@ async function taiDanhSach(resKey, S, { focus = false, signal } = {}) {
   const hoi =
     hai && !focus ? { ...S, page: Math.min(S.page, MAX_TRANG_TICH_LUY) } : S;
   const dau = await api.list(resKey, apiQuery(resKey, hoi, { focus }), opt);
-  if (!hai) return dau;
-  const den = Math.min(dau.meta.page, MAX_TRANG_TICH_LUY);
-  if (den <= 1) return dau;
+  // Server KHÔNG kẹp trang: page vượt tổng số trang -> items rỗng (ok:true). Đó là hành vi của API;
+  // còn ở giao diện thì ta chủ động đưa người dùng về trang cuối thay vì hiện danh sách trống.
+  const tp = dau.meta.totalPages;
+  const veTrang = (r) => ({
+    ...r,
+    meta: { ...r.meta, page: Math.min(r.meta.page, r.meta.totalPages) },
+  });
+  if (!hai) {
+    if (!dau.data.length && dau.meta.total > 0 && dau.meta.page > tp)
+      return veTrang(
+        await api.list(resKey, apiQuery(resKey, { ...S, page: tp }), opt),
+      );
+    return veTrang(dau);
+  }
+  const den = Math.min(dau.meta.page, tp, MAX_TRANG_TICH_LUY);
+  if (den <= 1) return veTrang(dau);
   const cac = await Promise.all(
     Array.from({ length: den }, (_, i) =>
       i + 1 === dau.meta.page
@@ -290,7 +317,7 @@ async function taiDanhSach(resKey, S, { focus = false, signal } = {}) {
   const data = [];
   for (const rs of cac)
     for (const x of rs.data) if (!co.has(x.id)) (co.add(x.id), data.push(x));
-  return { data, meta: cac[cac.length - 1].meta };
+  return veTrang({ data, meta: cac[cac.length - 1].meta });
 }
 
 // admin = true: /admin/:resource ; false: /dishes
@@ -467,7 +494,7 @@ function mount(root, ctx, env, S, first) {
       if (my !== seq) return;
       rows = res.data;
       meta = res.meta;
-      S.page = meta.page; // server kẹp trang về khoảng hợp lệ
+      S.page = meta.page; // taiDanhSach đã đưa trang về khoảng hợp lệ (server không kẹp)
       if (!rows.some((x) => x.id === S.sel)) S.sel = null;
       ve(false);
       ghiUrl(false);
@@ -582,7 +609,7 @@ function mount(root, ctx, env, S, first) {
   let byTay = ctx.query.has("sortBy") || ctx.query.has("sort");
   const cfg = LIST[resKey];
   const dongBoSapXep = () => {
-    datChon(root, "by", { gia: S.by, tat: S.q ? [] : ["relevance"] });
+    datChon(root, "by", { gia: S.by, tat: coLienQuan(S) ? [] : ["relevance"] });
     const nhom = $("[data-dir-nhom]", root);
     if (nhom) nhom.innerHTML = nutThuTu(S);
   };
@@ -597,8 +624,8 @@ function mount(root, ctx, env, S, first) {
   };
   const doiTuKhoa = (v) => {
     S.q = v;
-    if (!byTay) S.by = byMacDinh(S.q);
-    else if (!S.q && S.by === "relevance") S.by = BY_MAC_DINH;
+    if (!byTay) S.by = byMacDinh(S.q, S.mode);
+    else if (S.by === "relevance" && !coLienQuan(S)) S.by = BY_MAC_DINH;
     dongBoSapXep();
   };
 
@@ -620,9 +647,31 @@ function mount(root, ctx, env, S, first) {
     dongBoSapXep();
     sauDoi(true);
   };
+  // kiểu tìm: đổi mode -> bắt đầu lại từ trang 1 (không trộn kết quả hai kiểu tìm); chưa có từ khóa thì chỉ ghi nhớ lựa chọn
+  const dongBoMode = () => {
+    const nhom = $("[data-mode-nhom]", root);
+    if (nhom) nhom.innerHTML = nutMode(S);
+    const gy = $("[data-mode-goi-y]", root);
+    if (gy) gy.textContent = MODES.find(([k]) => k === S.mode)[2];
+  };
+  const khiChonMode = (e) => {
+    const n = e.target.closest("[data-mode]");
+    if (!n || S.mode === n.dataset.mode) return;
+    S.mode = n.dataset.mode;
+    // mode không có điểm mà đang xếp theo độ liên quan -> về theo tên; chưa tự chọn sắp xếp thì lấy mặc định của mode mới
+    if (!byTay) S.by = byMacDinh(S.q, S.mode);
+    else if (S.by === "relevance" && !coLienQuan(S)) S.by = BY_MAC_DINH;
+    dongBoMode();
+    dongBoSapXep();
+    S.page = 1;
+    S.sel = null;
+    if (S.q) tai();
+    else ghiUrl(false);
+  };
   vungLoc.forEach((v) => {
     v.addEventListener("input", khiGo, { signal });
     v.addEventListener("click", khiBam, { signal });
+    v.addEventListener("click", khiChonMode, { signal });
   });
   // ô chọn tự vẽ: trường sắp xếp, danh mục, tình trạng, đơn vị
   ganChon(root, signal, (ten, v) => {
@@ -653,6 +702,7 @@ function mount(root, ctx, env, S, first) {
     "click",
     () => {
       S.q = "";
+      S.mode = MODE_MAC_DINH;
       S.by = BY_MAC_DINH;
       S.dir = DIR_MAC_DINH;
       byTay = false;
@@ -668,6 +718,7 @@ function mount(root, ctx, env, S, first) {
         }
       }
       gia.dat("", "");
+      dongBoMode();
       dongBoSapXep();
       tai();
     },
