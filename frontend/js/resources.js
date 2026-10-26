@@ -26,24 +26,60 @@ const dishes = {
     { label: "Mô tả", value: (r) => r.description || "—" },
     {
       label: "Nguyên liệu",
-      value: (r) => (r.ingredients && r.ingredients.length ? r.ingredients.map((i) => i.name).join(", ") : "—"),
+      value: (r) =>
+        r.ingredients && r.ingredients.length
+          ? r.ingredients.map((i) => i.name).join(", ")
+          : "—",
     },
   ],
   fields: [
-    { name: "name", label: "Tên món *", type: "text", hint: (L) => `${L.name.min}-${L.name.max} ký tự, không trùng món khác` },
-    { name: "description", label: "Mô tả", type: "textarea", hint: (L) => `Tối đa ${L.description.max} ký tự` },
+    {
+      name: "name",
+      label: "Tên món *",
+      type: "text",
+      hint: (L) => `${L.name.min}-${L.name.max} ký tự, không trùng món khác`,
+    },
+    {
+      name: "description",
+      label: "Mô tả",
+      type: "textarea",
+      hint: (L) => `Tối đa ${L.description.max} ký tự`,
+    },
     {
       name: "price",
       label: "Giá (VNĐ) *",
       type: "text",
       inputmode: "numeric",
-      hint: (L) => `Số nguyên từ ${L.price.min.toLocaleString("vi-VN")} đến ${L.price.max.toLocaleString("vi-VN")}`,
+      hint: (L) =>
+        `Số nguyên từ ${L.price.min.toLocaleString("vi-VN")} đến ${L.price.max.toLocaleString("vi-VN")}`,
     },
-    { name: "category", label: "Danh mục *", type: "select", placeholder: "— Chọn danh mục —" },
+    {
+      name: "category",
+      label: "Danh mục *",
+      type: "select",
+      placeholder: "— Chọn danh mục —",
+    },
     { name: "available", label: "Còn bán", type: "checkbox" },
-    { name: "chefId", label: "Đầu bếp *", type: "select", placeholder: "— Chọn đầu bếp —" },
-    { name: "ingredientIds", label: "Nguyên liệu", type: "multiselect" },
-    { name: "image", label: "Ảnh món", type: "image", hint: () => "JPG/PNG/WEBP, tối đa 3MB. Bỏ trống = giữ ảnh cũ" },
+    {
+      name: "chefId",
+      label: "Đầu bếp *",
+      type: "select",
+      placeholder: "— Chọn đầu bếp —",
+    },
+    // to: "phai" -> ô nằm ở tờ giấy bên phải của form (từ "Nguyên liệu" trở xuống); không có -> tờ giấy bên trái
+    {
+      name: "ingredientIds",
+      label: "Nguyên liệu",
+      type: "ingredients",
+      to: "phai",
+    },
+    {
+      name: "image",
+      label: "Ảnh món",
+      type: "image",
+      to: "phai",
+      hint: () => "JPG/PNG/WEBP, tối đa 3MB. Bỏ trống = giữ ảnh cũ",
+    },
   ],
   toValues: (r) => ({
     name: r.name,
@@ -54,7 +90,15 @@ const dishes = {
     chefId: r.chefId ? String(r.chefId) : r.chef ? String(r.chef.id) : "",
     ingredientIds: (r.ingredients || []).map((i) => String(i.id)),
   }),
-  empty: () => ({ name: "", description: "", price: "", category: "", available: true, chefId: "", ingredientIds: [] }),
+  empty: () => ({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    available: true,
+    chefId: "",
+    ingredientIds: [],
+  }),
 };
 
 const chefs = {
@@ -62,14 +106,28 @@ const chefs = {
   title: "Đầu bếp",
   singular: "đầu bếp",
   label: (r) => r.name,
-  tile: (r) => ({ icon: "👩‍🍳", title: r.name, sub: r.specialty || "Chưa có chuyên môn" }),
+  tile: (r) => ({
+    icon: "👩‍🍳",
+    title: r.name,
+    sub: r.specialty || "Chưa có chuyên môn",
+  }),
   columns: [
     { label: "Tên", value: (r) => r.name },
     { label: "Chuyên môn", value: (r) => r.specialty || "—" },
   ],
   fields: [
-    { name: "name", label: "Tên đầu bếp *", type: "text", hint: (L) => `${L.name.min}-${L.name.max} ký tự` },
-    { name: "specialty", label: "Chuyên môn", type: "text", hint: (L) => `Tối đa ${L.specialty.max} ký tự` },
+    {
+      name: "name",
+      label: "Tên đầu bếp *",
+      type: "text",
+      hint: (L) => `${L.name.min}-${L.name.max} ký tự`,
+    },
+    {
+      name: "specialty",
+      label: "Chuyên môn",
+      type: "text",
+      hint: (L) => `Tối đa ${L.specialty.max} ký tự`,
+    },
   ],
   toValues: (r) => ({ name: r.name, specialty: r.specialty || "" }),
   empty: () => ({ name: "", specialty: "" }),
@@ -86,8 +144,19 @@ const ingredients = {
     { label: "Đơn vị", value: (r) => r.unit },
   ],
   fields: [
-    { name: "name", label: "Tên nguyên liệu *", type: "text", hint: (L) => `${L.ingredientName.min}-${L.ingredientName.max} ký tự, không trùng nguyên liệu khác` },
-    { name: "unit", label: "Đơn vị *", type: "select", placeholder: "— Chọn đơn vị —" },
+    {
+      name: "name",
+      label: "Tên nguyên liệu *",
+      type: "text",
+      hint: (L) =>
+        `${L.ingredientName.min}-${L.ingredientName.max} ký tự, không trùng nguyên liệu khác`,
+    },
+    {
+      name: "unit",
+      label: "Đơn vị *",
+      type: "select",
+      placeholder: "— Chọn đơn vị —",
+    },
   ],
   toValues: (r) => ({ name: r.name, unit: r.unit }),
   empty: () => ({ name: "", unit: "" }),
@@ -95,5 +164,8 @@ const ingredients = {
 
 export const RES = { dishes, chefs, ingredients };
 export const adminTabs = (active) =>
-  Object.values(RES).map((r) => ({ href: "/admin/" + r.key, label: r.title, on: r.key === active }));
-
+  Object.values(RES).map((r) => ({
+    href: "/admin/" + r.key,
+    label: r.title,
+    on: r.key === active,
+  }));

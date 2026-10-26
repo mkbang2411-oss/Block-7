@@ -9,6 +9,8 @@ import { navigate } from "../router.js";
 import { RES, adminTabs } from "../resources.js";
 import { $, $$, esc, thanhTren } from "../utils.js";
 import { quayLai } from "../list-config.js";
+import { htmlChon, ganChon } from "../chon.js";
+import { htmlNguyenLieu, ganNguyenLieu } from "../chon-nhieu.js";
 
 const MAX_ANH = 3 * 1024 * 1024; // khớp giới hạn 3MB của backend (backend vẫn kiểm tra lại)
 const LOAI_ANH = ["image/jpeg", "image/png", "image/webp"];
@@ -26,33 +28,40 @@ function truongHtml(f, v, options, L) {
     let input;
     if (f.type === "textarea")
       input = `<textarea id="${id}" name="${f.name}" rows="4">${esc(v)}</textarea>`;
-    else if (f.type === "select")
-      input = `<select id="${id}" name="${f.name}"><option value="">${esc(f.placeholder || "— Không chọn —")}</option>${options[
-        f.name
-      ]
-        .map(
-          (x) =>
-            `<option value="${esc(x.value)}"${String(v) === x.value ? " selected" : ""}>${esc(x.label)}</option>`,
-        )
-        .join("")}</select>`;
-    else if (f.type === "multiselect")
-      input = `<select id="${id}" name="${f.name}" multiple size="6">${options[
-        f.name
-      ]
-        .map(
-          (x) =>
-            `<option value="${esc(x.value)}"${(v || []).includes(x.value) ? " selected" : ""}>${esc(x.label)}</option>`,
-        )
-        .join(
-          "",
-        )}</select><small class="goi-y-nho">Giữ Ctrl/Cmd để chọn nhiều.</small>`;
+    else if (f.type === "select") {
+      // ô chọn tự vẽ (giống thanh sắp xếp); giá trị thật nằm trong <input type="hidden"> cùng tên
+      const ds = [
+        ["", f.placeholder || "— Không chọn —"],
+        ...options[f.name].map((x) => [x.value, x.label]),
+      ];
+      const hien = ds.some(([k]) => k === String(v ?? ""))
+        ? String(v ?? "")
+        : "";
+      input = `<input type="hidden" name="${f.name}" value="${esc(hien)}">${htmlChon({ id, ten: f.name, gia: hien, ds })}`;
+    } else if (f.type === "ingredients")
+      input = htmlNguyenLieu({
+        id,
+        ten: f.name,
+        ds: options[f.name],
+        chon: v || [],
+      });
     else if (f.type === "image")
       input = `<input type="file" id="${id}" name="${f.name}" accept="image/jpeg,image/png,image/webp">`;
     else
       input = `<input type="text" id="${id}" name="${f.name}" value="${esc(v)}"${f.inputmode ? ` inputmode="${f.inputmode}"` : ""}>`;
-    o = `<label for="${id}">${esc(f.label)}</label>${input}`;
+    // ô nguyên liệu: nhãn trỏ vào ô tìm kiếm
+    o = `<label for="${id}${f.type === "ingredients" ? "-q" : ""}">${esc(f.label)}</label>${input}`;
   }
   return `<div class="truong" data-field="${f.name}">${o}${hint}</div>`;
+}
+
+// một tờ giấy (cùng kiểu tờ giấy sidebar: băng keo, lề đỏ, lỗ bấm kim, đường xé giấy ở phần đầu)
+function toGiay({ tieuDe, phu, html }) {
+  return `<section class="to-giay">
+  <span class="to-bang" aria-hidden="true"></span>
+  <header class="to-dau"><h2>${esc(tieuDe)}</h2>${phu ? `<p>${esc(phu)}</p>` : ""}</header>
+  <div class="to-than">${html}</div>
+</section>`;
 }
 
 // isEdit: có id trong đường dẫn
@@ -78,11 +87,35 @@ export async function load(ctx, resKey) {
       ? ingredients.data.map((i) => ({
           value: String(i.id),
           label: `${i.name} (${i.unit})`,
+          name: i.name,
+          unit: i.unit,
         }))
       : [],
   };
   const values = record ? r.toValues(record) : r.empty();
   const tieuDe = (isEdit ? "Sửa " : "Thêm ") + r.singular;
+
+  const truongs = (list) =>
+    list
+      .map((f) => truongHtml(f, values[f.name], options, opt.limits))
+      .join("");
+  const trai = r.fields.filter((f) => f.to !== "phai");
+  const phai = r.fields.filter((f) => f.to === "phai");
+  const haiTo = phai.length > 0; // món ăn: 2 tờ giấy (trái: thông tin chung, phải: nguyên liệu + ảnh); đầu bếp / nguyên liệu: 1 tờ
+  const giay = haiTo
+    ? toGiay({ tieuDe, phu: "Thông tin chung", html: truongs(trai) }) +
+      toGiay({
+        tieuDe: "Nguyên liệu & ảnh",
+        phu: "Bấm vào nguyên liệu để chọn, bấm lần nữa để bỏ",
+        html: truongs(phai),
+      })
+    : toGiay({
+        tieuDe,
+        phu: isEdit
+          ? "Sửa xong bấm “Lưu thay đổi”"
+          : "Điền xong bấm “Thêm mới”",
+        html: truongs(trai),
+      });
 
   return {
     title: tieuDe,
@@ -90,10 +123,9 @@ export async function load(ctx, resKey) {
     html: `<div class="nen"></div><div class="mo"></div>
 <main class="man bep cuon">
   ${thanhTren({ tabs: adminTabs(resKey), role: "admin" })}
-  <form class="hop hop-giua rong" id="form" novalidate>
-    <h2>${tieuDe}</h2>
+  <form class="giay-form${haiTo ? " hai-to" : ""}" id="form" novalidate>
     <div class="bao-loi" id="loi" hidden></div>
-    ${r.fields.map((f) => truongHtml(f, values[f.name], options, opt.limits)).join("")}
+    <div class="giay-luoi">${giay}</div>
     <div class="nut-hang">
       <a class="nut nut-phu" href="${esc(quayLai("/admin/" + resKey, isEdit ? { sel: id } : { giu: true }))}">Hủy</a>
       <button class="nut">${isEdit ? "Lưu thay đổi" : "Thêm mới"}</button>
@@ -110,8 +142,8 @@ function docForm(form, r) {
   r.fields.forEach((f) => {
     const el = form.elements[f.name];
     if (f.type === "checkbox") v[f.name] = el.checked;
-    else if (f.type === "multiselect")
-      v[f.name] = [...el.selectedOptions].map((o) => o.value);
+    else if (f.type === "ingredients")
+      v[f.name] = el.value ? el.value.split(",") : []; // <input type="hidden"> dạng "id,id,id"
     else if (f.type === "image") v.image = el.files[0] || null;
     else v[f.name] = el.value.trim();
   });
@@ -143,6 +175,13 @@ function mount(root, ctx, { r, id, isEdit }) {
     loi.hidden = false;
     loi.scrollIntoView({ block: "nearest" });
   };
+
+  // ô chọn tự vẽ: chọn xong thì ghi giá trị vào <input type="hidden"> cùng tên để docForm đọc được
+  ganChon(root, ctx.signal, (ten, gia) => {
+    form.elements[ten].value = gia;
+    $(`.truong[data-field="${ten}"]`, form)?.classList.remove("co-loi");
+  });
+  ganNguyenLieu(root, ctx.signal);
 
   form.addEventListener(
     "submit",
